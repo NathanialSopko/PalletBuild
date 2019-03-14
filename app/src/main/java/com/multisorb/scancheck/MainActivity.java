@@ -1,5 +1,6 @@
 package com.multisorb.scancheck;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -30,8 +31,12 @@ public class MainActivity extends AppCompatActivity {
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
+        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+
         final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
         final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+
+
 
         input1.setShowSoftInputOnFocus(false);
         input2.setShowSoftInputOnFocus(false);
@@ -40,7 +45,11 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                input2.requestFocus();
+                new Handler().postDelayed(new Runnable(){
+                    public void run(){
+                        input2.requestFocus();
+                    }
+                },1000);
             }
 
             @Override
@@ -54,7 +63,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        input2.addTextChangedListener(new TextWatcher() {
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                new Handler().postDelayed(new Runnable(){
+                    public void run(){
+                        fab.performClick();
+                    }
+                },1000);
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start,
+                                          int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start,
+                                      int before, int count) {
+            }
+        });
+
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -84,6 +115,8 @@ public class MainActivity extends AppCompatActivity {
 
                     Snackbar.make(view, "Text was the same", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
+
+                    //MainActivity.this.recreate();
                 }
                 else{
 
@@ -103,6 +136,9 @@ public class MainActivity extends AppCompatActivity {
 
                     Snackbar.make(view, "Text was different", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
+
+                    //MainActivity.this.recreate();
+
                 }
 
 
@@ -126,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
             return true;
         }
 
