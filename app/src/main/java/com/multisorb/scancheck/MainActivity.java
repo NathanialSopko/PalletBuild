@@ -17,10 +17,26 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.EditText;
 
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
+
 public class MainActivity extends AppCompatActivity {
+
+    @Override
+    public void onBackPressed() {
+        //moveTaskToBack(true);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+        //getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 
@@ -38,8 +54,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        input1.setShowSoftInputOnFocus(false);
-        input2.setShowSoftInputOnFocus(false);
+//        input1.setShowSoftInputOnFocus(false);
+//        input2.setShowSoftInputOnFocus(false);
 
         input1.addTextChangedListener(new TextWatcher() {
 
@@ -97,6 +113,38 @@ public class MainActivity extends AppCompatActivity {
                 String text1 = input1.getText().toString();
                 String text2 = input2.getText().toString();
 
+                RequestParams params = new RequestParams();
+                params.setUseJsonStreamer(true);
+                JSONObject student1 = new JSONObject();
+                try {
+                    student1.put("Badge_ID", "test");
+                    student1.put("Pallet_ID", text1);
+                    student1.put("CONT_ID", text2);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                StringEntity stringEntity;
+                try {
+                    stringEntity = new StringEntity(student1.toString());
+                    AsyncHttpClient client = new AsyncHttpClient();
+                    client.post(getBaseContext(),"http://192.168.1.253/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                        @Override
+                        public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                            String test = new String(responseBody);
+                            Snackbar.make(findViewById(R.id.main_layout), test, Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                        }
+
+                        @Override
+                        public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                            Snackbar.make(findViewById(R.id.main_layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+                                    .setAction("Action", null).show();
+                        }
+                    });
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
 
                 if(text1.equals(text2)){
                     MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.quiteimpressed);

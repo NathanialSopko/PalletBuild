@@ -3,9 +3,14 @@ package com.multisorb.scancheck;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.preference.PreferenceActivity;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +29,7 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -35,10 +41,21 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.loopj.android.http.*;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -81,24 +98,65 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.badgeNumber);
-        populateAutoComplete();
+        //populateAutoComplete();
 
-//        URL url = new URL("http://localhost:44388/api/PalletBuilder/CheckInUser.com");
-//        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-//        con.setRequestMethod("GET");
-//
-//        OkHttpClient client = new OkHttpClient();
-//
-//        String post(String url, String json) throws IOException {
-//            RequestBody body = RequestBody.create(JSON, json);
-//            Request request = new Request.Builder()
-//                    .url(url)
-//                    .post(body)
-//                    .build();
-//            try (Response response = client.newCall(request).execute()) {
-//                return response.body().string();
-//            }
+//        RequestParams params = new RequestParams();
+//        params.setUseJsonStreamer(true);
+//        JSONObject student1 = new JSONObject();
+//        try {
+//            student1.put("stringValue", "tester");
+//        } catch (JSONException e) {
+//            e.printStackTrace();
 //        }
+//
+//        StringEntity stringEntity;
+//        try {
+//            stringEntity = new StringEntity(student1.toString());
+//            AsyncHttpClient client = new AsyncHttpClient();
+//            client.post(this,"http://192.168.1.253/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+//                @Override
+//                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+//                    Snackbar.make(findViewById(R.id.Login_Layout), new String(responseBody), Snackbar.LENGTH_LONG)
+//                            .setAction("Action", null).show();
+//                }
+//
+//                @Override
+//                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+//                    Snackbar.make(findViewById(R.id.Login_Layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+//                            .setAction("Action", null).show();
+//                }
+//            });
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
+
+
+
+//        client.get("http://192.168.1.253/PalletBuild/PalletBuild/CheckAPIWorking", new AsyncHttpResponseHandler() {
+//
+//            @Override
+//            public void onStart() {
+//                Snackbar.make(findViewById(R.id.Login_Layout), "Hi", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//
+//            @Override
+//            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+//                Snackbar.make(findViewById(R.id.Login_Layout), new String(responseBody), Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//
+//            @Override
+//            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+//                Snackbar.make(findViewById(R.id.Login_Layout), "Call Broke", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//
+//            @Override
+//            public void onRetry(int retryNo) {
+//
+//            }
+//        });
 
 //        mPasswordView = (EditText) findViewById(R.id.password);
 //        mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -124,27 +182,174 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         input1.setShowSoftInputOnFocus(false);
 
-        input1.addTextChangedListener(new TextWatcher() {
+        input1.addTextChangedListener(
+                new TextWatcher() {
+                    @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+                    @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
-            @Override
-            public void afterTextChanged(Editable s) {
-                new Handler().postDelayed(new Runnable(){
-                    public void run(){
-                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    Handler handler = new Handler(Looper.getMainLooper() /*UI thread*/);
+                    Runnable workRunnable;
+                    @Override public void afterTextChanged(Editable s) {
+                        handler.removeCallbacks(workRunnable);
+                        workRunnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                RequestParams params = new RequestParams();
+                                params.setUseJsonStreamer(true);
+                                JSONObject student1 = new JSONObject();
+                                try {
+                                    student1.put("stringValue", input1.getText());
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                                StringEntity stringEntity;
+                                try {
+                                    stringEntity = new StringEntity(student1.toString());
+                                    AsyncHttpClient client = new AsyncHttpClient();
+                                    client.post(getBaseContext(),"http://192.168.1.253/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                                        @Override
+                                        public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                                            String test = new String(responseBody);
+                                            test = test.substring(1, test.length()-1);
+                                            if(!test.equals("")){
+                                                startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                                            }
+                                            else{
+                                                input1.setText("");
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                                            Snackbar.make(findViewById(R.id.Login_Layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+                                                    .setAction("Action", null).show();
+                                        }
+                                    });
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        };
+                        handler.postDelayed(workRunnable, 1500 /*delay*/);
                     }
-                },1000);
-            }
+//
+//
+//                    private Timer timer=new Timer();
+//                    private final long DELAY = 1000; // milliseconds
 
-            @Override
-            public void beforeTextChanged(CharSequence s, int start,
-                                          int count, int after) {
-            }
+//                    @Override
+//                    public void afterTextChanged(final Editable s) {
+//                        if(timer != null){
+//                            timer.cancel();
+//                        }
+//                        timer = new Timer();
+//                        timer.schedule(
+//                                new TimerTask() {
+//                                    @Override
+//                                    public void run() {
+//                                        // TODO: do what you need here (refresh list)
+//                                        RequestParams params = new RequestParams();
+//                                        params.setUseJsonStreamer(true);
+//                                        JSONObject student1 = new JSONObject();
+//                                        try {
+//                                            student1.put("stringValue", input1.getText());
+//                                        } catch (JSONException e) {
+//                                            e.printStackTrace();
+//                                        }
+//
+//                                        StringEntity stringEntity;
+//                                        try {
+//                                            stringEntity = new StringEntity(student1.toString());
+//                                            AsyncHttpClient client = new AsyncHttpClient();
+//                                            client.post(getBaseContext(),"http://192.168.1.253/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+//                                                @Override
+//                                                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+//                                                    String test = new String(responseBody);
+//                                                    test = test.substring(1, test.length()-1);
+//                                                    if(test != ""){
+//                                                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+//                                                    }
+//                                                    else{
+//                                                        input1.setText("");
+//                                                    }
+//                                                }
+//
+//                                                @Override
+//                                                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+//                                                    Snackbar.make(findViewById(R.id.Login_Layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+//                                                            .setAction("Action", null).show();
+//                                                }
+//                                            });
+//                                        } catch (UnsupportedEncodingException e) {
+//                                            e.printStackTrace();
+//                                        }
+//                                        // you will probably need to use runOnUiThread(Runnable action) for some specific actions
+//                                    }
+//                                },
+//                                DELAY
+//                        );
+//                    }
+                }
+        );
 
-            @Override
-            public void onTextChanged(CharSequence s, int start,
-                                      int before, int count) {
-            }
-        });
+//        input1.addTextChangedListener(new TextWatcher() {
+//
+//            @Override
+//            public void afterTextChanged(Editable s) {
+//                if(input1.getText().length() > 6){
+//                    new Handler().postDelayed(new Runnable(){
+//                        public void run(){
+//                            RequestParams params = new RequestParams();
+//                            params.setUseJsonStreamer(true);
+//                            JSONObject student1 = new JSONObject();
+//                            try {
+//                                student1.put("stringValue", input1.getText());
+//                            } catch (JSONException e) {
+//                                e.printStackTrace();
+//                            }
+//
+//                            StringEntity stringEntity;
+//                            try {
+//                                stringEntity = new StringEntity(student1.toString());
+//                                AsyncHttpClient client = new AsyncHttpClient();
+//                                client.post(getBaseContext(),"http://192.168.1.253/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+//                                    @Override
+//                                    public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+//                                        String test = new String(responseBody);
+//                                        test = test.substring(1, test.length()-1);
+//                                        if(test != ""){
+//                                            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+//                                        }
+//                                        else{
+//                                            input1.setText("");
+//                                        }
+//                                    }
+//
+//                                    @Override
+//                                    public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+//                                        Snackbar.make(findViewById(R.id.Login_Layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+//                                                .setAction("Action", null).show();
+//                                    }
+//                                });
+//                            } catch (UnsupportedEncodingException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    },1000);
+//                }
+//            }
+//
+//            @Override
+//            public void beforeTextChanged(CharSequence s, int start,
+//                                          int count, int after) {
+//            }
+//
+//            @Override
+//            public void onTextChanged(CharSequence s, int start,
+//                                      int before, int count) {
+//            }
+//        });
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
