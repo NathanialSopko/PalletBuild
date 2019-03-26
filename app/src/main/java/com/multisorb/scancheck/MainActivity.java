@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -35,7 +36,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        //moveTaskToBack(true);
+        ResetActivity();
+    }
+
+    private void ResetActivity(){
+        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
+        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+
+        input1.setText("");
+        input2.setText("");
+
+        input1.requestFocus();
     }
 
     @Override
@@ -45,153 +56,151 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        Bundle b = getIntent().getExtras();
+        String value = ""; // or other values
+        if(b != null){
+            value = b.getString("Label");
+            setTitle(value);
+        }
+
         //getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
-        final FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-
-        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
-        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+        final EditText input1 = findViewById(R.id.plain_text_input);
+        final EditText input2 = findViewById(R.id.plain_text_input2);
 
 
 
 //        input1.setShowSoftInputOnFocus(false);
 //        input2.setShowSoftInputOnFocus(false);
 
-        input1.addTextChangedListener(new TextWatcher() {
+        input1.addTextChangedListener(
+                new TextWatcher() {
+                    @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+                    @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
-            @Override
-            public void afterTextChanged(Editable s) {
-                new Handler().postDelayed(new Runnable(){
-                    public void run(){
-                        input2.requestFocus();
+                    Handler handler = new Handler(Looper.getMainLooper() /*UI thread*/);
+                    Runnable workRunnable;
+                    @Override public void afterTextChanged(Editable s) {
+                        handler.removeCallbacks(workRunnable);
+                        workRunnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                if(!input1.getText().toString().equals("")){
+                                    input2.requestFocus();
+                                }
+                            }
+                        };
+                        handler.postDelayed(workRunnable, 1500 /*delay*/);
                     }
-                },1000);
-            }
+                }
+        );
 
-            @Override
-            public void beforeTextChanged(CharSequence s, int start,
-                                          int count, int after) {
-            }
 
-            @Override
-            public void onTextChanged(CharSequence s, int start,
-                                      int before, int count) {
-            }
-        });
+        input2.addTextChangedListener(
+                new TextWatcher() {
+                    @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
+                    @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
-        input2.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                new Handler().postDelayed(new Runnable(){
-                    public void run(){
-                        fab.performClick();
+                    Handler handler = new Handler(Looper.getMainLooper() /*UI thread*/);
+                    Runnable workRunnable;
+                    @Override public void afterTextChanged(Editable s) {
+                        handler.removeCallbacks(workRunnable);
+                        workRunnable = new Runnable() {
+                            @Override
+                            public void run() {
+                                if(!input2.getText().toString().equals("")){
+                                    Check();
+                                }
+                            }
+                        };
+                        handler.postDelayed(workRunnable, 1500 /*delay*/);
                     }
-                },1000);
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start,
-                                          int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start,
-                                      int before, int count) {
-            }
-        });
-
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-
-                EditText input1 = (EditText) findViewById(R.id.plain_text_input);
-                EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
-
-                String text1 = input1.getText().toString();
-                String text2 = input2.getText().toString();
-
-                RequestParams params = new RequestParams();
-                params.setUseJsonStreamer(true);
-                JSONObject student1 = new JSONObject();
-                try {
-                    student1.put("Badge_ID", "test");
-                    student1.put("Pallet_ID", text1);
-                    student1.put("CONT_ID", text2);
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
+        );
+    }
 
-                StringEntity stringEntity;
-                try {
-                    stringEntity = new StringEntity(student1.toString());
-                    AsyncHttpClient client = new AsyncHttpClient();
-                    client.post(getBaseContext(),"http://192.168.1.253/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
-                        @Override
-                        public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                            String test = new String(responseBody);
-                            Snackbar.make(findViewById(R.id.main_layout), test, Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                        }
+    public void Check(){
+        EditText input1 = (EditText) findViewById(R.id.plain_text_input);
+        EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
 
-                        @Override
-                        public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                            Snackbar.make(findViewById(R.id.main_layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
-                                    .setAction("Action", null).show();
-                        }
-                    });
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
+        String text1 = input1.getText().toString();
+        String text2 = input2.getText().toString();
 
-                if(text1.equals(text2)){
-                    MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.quiteimpressed);
-                    ring.start();
+        RequestParams params = new RequestParams();
+        params.setUseJsonStreamer(true);
+        JSONObject student1 = new JSONObject();
+        try {
+            student1.put("Badge_ID", "test");
+            student1.put("Pallet_ID", text1);
+            student1.put("CONT_ID", text2);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-                    View overallDiv = findViewById(R.id.overallDiv);
-                    overallDiv.setBackgroundColor(0xFF00FF00);
-                    final Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            View overallDiv = findViewById(R.id.overallDiv);
-                            overallDiv.setBackgroundColor(0xffffffff);
-                        }
-                    }, 3000);
-
-                    Snackbar.make(view, "Text was the same", Snackbar.LENGTH_LONG)
+        StringEntity stringEntity;
+        try {
+            stringEntity = new StringEntity(student1.toString());
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.post(getBaseContext(),"http://192.168.2.2/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    String test = new String(responseBody);
+                    Snackbar.make(findViewById(R.id.main_layout), test, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
-
-                    //MainActivity.this.recreate();
                 }
-                else{
 
-                    MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.consequence);
-                    ring.start();
-
-                    View overallDiv = findViewById(R.id.overallDiv);
-                    overallDiv.setBackgroundColor(Color.parseColor("#ff0000"));
-                    final Handler handler = new Handler();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            View overallDiv = findViewById(R.id.overallDiv);
-                            overallDiv.setBackgroundColor(0xffffffff);
-                        }
-                    }, 3000);
-
-                    Snackbar.make(view, "Text was different", Snackbar.LENGTH_LONG)
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Snackbar.make(findViewById(R.id.main_layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
-
-                    //MainActivity.this.recreate();
-
                 }
+            });
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
+        if(text1.equals(text2)){
+            MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.quiteimpressed);
+            ring.start();
 
-            }
-        });
+            View overallDiv = findViewById(R.id.overallDiv);
+            overallDiv.setBackgroundColor(0xFF00FF00);
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    View overallDiv = findViewById(R.id.overallDiv);
+                    overallDiv.setBackgroundColor(0xffffffff);
+                }
+            }, 3000);
+
+            Snackbar.make(getCurrentFocus(), "Text was the same", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+
+            ResetActivity();
+        }
+        else{
+
+            MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.consequence);
+            ring.start();
+
+            View overallDiv = findViewById(R.id.overallDiv);
+            overallDiv.setBackgroundColor(Color.parseColor("#ff0000"));
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    View overallDiv = findViewById(R.id.overallDiv);
+                    overallDiv.setBackgroundColor(0xffffffff);
+                }
+            }, 3000);
+
+            Snackbar.make(getCurrentFocus(), "Text was different", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+
+            ResetActivity();
+
+        }
     }
 
     @Override
