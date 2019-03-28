@@ -181,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else{
 
-            MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.consequence);
+            MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.buzz);
             ring.start();
 
             View overallDiv = findViewById(R.id.overallDiv);
