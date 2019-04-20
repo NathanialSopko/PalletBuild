@@ -18,6 +18,9 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.EditText;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
@@ -26,6 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,6 +37,8 @@ import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class MainActivity extends AppCompatActivity {
+
+    private String badgeID;
 
     @Override
     public void onBackPressed() {
@@ -61,17 +67,19 @@ public class MainActivity extends AppCompatActivity {
         if(b != null){
             value = b.getString("Label");
             setTitle(value);
+
+            badgeID = b.getString("Badge_ID");
         }
 
-        //getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         final EditText input1 = findViewById(R.id.plain_text_input);
         final EditText input2 = findViewById(R.id.plain_text_input2);
 
 
 
-//        input1.setShowSoftInputOnFocus(false);
-//        input2.setShowSoftInputOnFocus(false);
+        input1.setShowSoftInputOnFocus(false);
+        input2.setShowSoftInputOnFocus(false);
 
         input1.addTextChangedListener(
                 new TextWatcher() {
@@ -90,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                         };
-                        handler.postDelayed(workRunnable, 1500 /*delay*/);
+                        handler.postDelayed(workRunnable, 750 /*delay*/);
                     }
                 }
         );
@@ -113,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                         };
-                        handler.postDelayed(workRunnable, 1500 /*delay*/);
+                        handler.postDelayed(workRunnable, 750 /*delay*/);
                     }
                 }
         );
@@ -130,9 +138,10 @@ public class MainActivity extends AppCompatActivity {
         params.setUseJsonStreamer(true);
         JSONObject student1 = new JSONObject();
         try {
-            student1.put("Badge_ID", "test");
+            student1.put("Badge_ID", badgeID);
             student1.put("Pallet_ID", text1);
             student1.put("CONT_ID", text2);
+            student1.put("isIndia", 0);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -141,65 +150,78 @@ public class MainActivity extends AppCompatActivity {
         try {
             stringEntity = new StringEntity(student1.toString());
             AsyncHttpClient client = new AsyncHttpClient();
-            client.post(getBaseContext(),"http://192.168.2.2/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+            client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                    String test = new String(responseBody);
-                    Snackbar.make(findViewById(R.id.main_layout), test, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
+                    String testString = new String(responseBody, StandardCharsets.UTF_8);
+
+                    testString = testString.substring(1, testString.length()-1);
+                    testString = testString.replace("\\\"", "\"");
+
+                    Gson gson = new GsonBuilder().create();
+                    GetPalletDataReturner object = new GetPalletDataReturner();
+                    try{
+
+                        object = gson.fromJson(testString, GetPalletDataReturner.class);
+
+                    }
+                    catch(JsonSyntaxException e){
+                        ResetActivity();
+                    }
+
+                    if(Integer.parseInt(object.errno) == 0){
+                        MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.quiteimpressed);
+                        ring.start();
+
+                        View overallDiv = findViewById(R.id.overallDiv);
+                        overallDiv.setBackgroundColor(0xFF00FF00);
+                        final Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                View overallDiv = findViewById(R.id.overallDiv);
+                                overallDiv.setBackgroundColor(0xffffffff);
+                            }
+                        }, 3000);
+
+                        Snackbar.make(getCurrentFocus(), object.errtxt, Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+
+                        ResetActivity();
+                    }
+                    else{
+                        MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.buzz);
+                        ring.start();
+
+                        View overallDiv = findViewById(R.id.overallDiv);
+                        overallDiv.setBackgroundColor(Color.parseColor("#ff0000"));
+                        final Handler handler = new Handler();
+                        handler.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                View overallDiv = findViewById(R.id.overallDiv);
+                                overallDiv.setBackgroundColor(0xffffffff);
+                            }
+                        }, 3000);
+
+                        Snackbar.make(getCurrentFocus(), object.errtxt, Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+
+                        ResetActivity();
+                    }
+
                 }
 
                 @Override
                 public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                     Snackbar.make(findViewById(R.id.main_layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
+
+                    ResetActivity();
                 }
             });
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-        }
-
-        if(text1.equals(text2)){
-            MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.quiteimpressed);
-            ring.start();
-
-            View overallDiv = findViewById(R.id.overallDiv);
-            overallDiv.setBackgroundColor(0xFF00FF00);
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    View overallDiv = findViewById(R.id.overallDiv);
-                    overallDiv.setBackgroundColor(0xffffffff);
-                }
-            }, 3000);
-
-            Snackbar.make(getCurrentFocus(), "Text was the same", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
-
-            ResetActivity();
-        }
-        else{
-
-            MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.buzz);
-            ring.start();
-
-            View overallDiv = findViewById(R.id.overallDiv);
-            overallDiv.setBackgroundColor(Color.parseColor("#ff0000"));
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    View overallDiv = findViewById(R.id.overallDiv);
-                    overallDiv.setBackgroundColor(0xffffffff);
-                }
-            }, 3000);
-
-            Snackbar.make(getCurrentFocus(), "Text was different", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
-
-            ResetActivity();
-
         }
     }
 

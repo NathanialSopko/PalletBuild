@@ -33,6 +33,7 @@ import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -41,6 +42,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.loopj.android.http.*;
 
 import org.json.JSONException;
@@ -49,6 +55,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -92,6 +99,19 @@ public class LoginActivity extends AppCompatActivity {
 //    public static final MediaType JSON
 //            = MediaType.get("application/json; charset=utf-8");
 
+    private void ResetActivity(){
+        final EditText input1 = (EditText) findViewById(R.id.badgeNumber);
+
+        input1.setText("");
+
+        input1.requestFocus();
+    }
+
+    @Override
+    public void onBackPressed() {
+        ResetActivity();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,7 +123,9 @@ public class LoginActivity extends AppCompatActivity {
 
         final EditText input1 = (EditText) findViewById(R.id.badgeNumber);
 
-        //input1.setShowSoftInputOnFocus(false);
+        input1.setShowSoftInputOnFocus(false);
+
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         input1.addTextChangedListener(
                 new TextWatcher() {
@@ -117,52 +139,71 @@ public class LoginActivity extends AppCompatActivity {
                         workRunnable = new Runnable() {
                             @Override
                             public void run() {
-                                RequestParams params = new RequestParams();
-                                params.setUseJsonStreamer(true);
-                                JSONObject student1 = new JSONObject();
-                                try {
-                                    student1.put("stringValue", input1.getText().toString());
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
 
-                                StringEntity stringEntity;
-                                try {
-                                    stringEntity = new StringEntity(student1.toString());
-                                    AsyncHttpClient client = new AsyncHttpClient();
-                                    client.post(getBaseContext(),"http://192.168.2.2/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
-                                        @Override
-                                        public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                                            String test = new String(responseBody);
-                                            test = test.substring(1, test.length()-1);
-                                            if(!test.equals("")){
-                                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                                Bundle b = new Bundle();
-                                                b.putString("Label", test); //Your id
-                                                intent.putExtras(b); //Put your id to your next Intent
-                                                startActivity(intent);
-                                                finish();
+                                if(!input1.getText().toString().equals("")){
+                                    RequestParams params = new RequestParams();
+                                    params.setUseJsonStreamer(true);
+                                    JSONObject student1 = new JSONObject();
+                                    try {
+                                        student1.put("stringValue", input1.getText().toString());
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
 
-                                                //old call without added label
-                                                //startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                                    StringEntity stringEntity;
+                                    try {
+                                        stringEntity = new StringEntity(student1.toString());
+                                        AsyncHttpClient client = new AsyncHttpClient();
+                                        client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                                            @Override
+                                            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                                                String testString = new String(responseBody, StandardCharsets.UTF_8);
+
+                                                testString = testString.substring(1, testString.length()-1);
+                                                testString = testString.replace("\\\"", "\"");
+                                                //testString = testString.replace("'", "\'");
+
+                                                Gson gson = new GsonBuilder().create();
+                                                ReturnBadgeModel object = new ReturnBadgeModel();
+                                                try{
+
+                                                    object = gson.fromJson(testString, ReturnBadgeModel.class);
+
+                                                }
+                                                catch(JsonSyntaxException e){
+                                                    ResetActivity();
+                                                }
+
+                                                if(object.Column1 == 0){
+                                                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                                    Bundle b = new Bundle();
+                                                    b.putString("Label", object.EmpName); //Your id
+                                                    b.putString("Badge_ID", object.BadgeNo); //Your id
+                                                    intent.putExtras(b); //Put your id to your next Intent
+                                                    startActivity(intent);
+                                                    finish();
+                                                }
+                                                else{
+                                                    Snackbar.make(findViewById(R.id.Login_Layout), object.EmpName, Snackbar.LENGTH_LONG)
+                                                            .setAction("Action", null).show();
+                                                    ResetActivity();
+                                                }
                                             }
-                                            else{
-                                                input1.setText("");
-                                            }
-                                        }
 
-                                        @Override
-                                        public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                                            Snackbar.make(findViewById(R.id.Login_Layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
-                                                    .setAction("Action", null).show();
-                                        }
-                                    });
-                                } catch (UnsupportedEncodingException e) {
-                                    e.printStackTrace();
+                                            @Override
+                                            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                                                Snackbar.make(findViewById(R.id.Login_Layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+                                                        .setAction("Action", null).show();
+                                                ResetActivity();
+                                            }
+                                        });
+                                    } catch (UnsupportedEncodingException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
                         };
-                        handler.postDelayed(workRunnable, 1500 /*delay*/);
+                        handler.postDelayed(workRunnable, 750 /*delay*/);
                     }
                 }
         );
