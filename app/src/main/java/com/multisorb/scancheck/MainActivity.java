@@ -3,6 +3,7 @@ package com.multisorb.scancheck;
 import android.content.Intent;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,24 +42,44 @@ public class MainActivity extends AppCompatActivity {
 
     private String badgeID;
 
+    private String palletID;
+
+    private Snackbar CheckSnackBar;
+
+    /***
+     * Override area
+     *
+     * On Back Press (Physical Button Click)
+     *
+     * OnCreate (Initialization)
+     *
+     * OnCreateOptions Menu (Top Right Button (...))
+     *
+     * OnOptionsItemSelected (Log Out)
+     */
+
     @Override
     public void onBackPressed() {
-        ResetActivity();
-    }
-
-    private void ResetActivity(){
         final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
         final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+        input2.setEnabled(true);
 
-        input1.setText("");
-        input2.setText("");
-
-        input1.requestFocus();
+        if(palletID != ""){
+            ResetContainerScan();
+        }
+        else{
+            ResetActivity();
+        }
     }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        this.palletID = "";
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -77,7 +99,6 @@ public class MainActivity extends AppCompatActivity {
         final EditText input2 = findViewById(R.id.plain_text_input2);
 
 
-
         input1.setShowSoftInputOnFocus(false);
         input2.setShowSoftInputOnFocus(false);
 
@@ -94,7 +115,12 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 if(!input1.getText().toString().equals("")){
-                                    input2.requestFocus();
+                                    try {
+                                        GetPalletCountFirst();
+                                    }
+                                    catch (Exception e){
+
+                                    }
                                 }
                             }
                         };
@@ -117,7 +143,12 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 if(!input2.getText().toString().equals("")){
-                                    Check();
+                                    if(input2.getText().toString().equals(palletID)){
+                                        ResetActivity();
+                                    }
+                                    else{
+                                        Check();
+                                    }
                                 }
                             }
                         };
@@ -125,6 +156,225 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
+    }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    /***
+     *
+     * End of override area
+     *
+     */
+
+
+
+    private void ResetActivity(){
+        palletID = "";
+
+        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
+        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+        final TextView textView  = (TextView)findViewById(R.id.totalScanned);
+
+        input1.setText("");
+        input2.setText("");
+        textView.setText("");
+
+        input1.setFocusable(true);
+        input1.requestFocus();
+
+        DismissSnackBar();
+    }
+
+    private void ResetContainerScan(){
+        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+
+        View overallDiv = findViewById(R.id.overallDiv);
+        overallDiv.setBackgroundColor(Color.parseColor("#ffffff"));
+
+        input2.setText("");
+
+        input2.requestFocus();
+
+        DismissSnackBar();
+    }
+
+    private void DismissSnackBar(){
+        if(CheckSnackBar != null){
+            if(CheckSnackBar.isShown()){
+                CheckSnackBar.dismiss();
+            }
+        }
+    }
+
+
+
+    /** GetPalletCountFirst is assuming that there is no palletID already stored **/
+    public void GetPalletCountFirst(){
+        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
+        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+        final TextView textView  = (TextView)findViewById(R.id.totalScanned);
+
+        String text1 = input1.getText().toString();
+
+        RequestParams params = new RequestParams();
+        params.setUseJsonStreamer(true);
+        JSONObject student1 = new JSONObject();
+        try {
+            student1.put("Pallet_ID", text1);
+            student1.put("isIndia", 0);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        StringEntity stringEntity;
+        try {
+            stringEntity = new StringEntity(student1.toString());
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+            //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    String testString = new String(responseBody, StandardCharsets.UTF_8);
+
+                    testString = testString.substring(1, testString.length()-1);
+                    testString = testString.replace("\\\"", "\"");
+
+                    Gson gson = new GsonBuilder().create();
+                    GetPalletCountReturner object = new GetPalletCountReturner();
+                    try{
+
+                        object = gson.fromJson(testString, GetPalletCountReturner.class);
+
+                    }
+                    catch(JsonSyntaxException e){
+                        ResetActivity();
+                    }
+
+                    if(object.Error == 0){
+                        //display the count here
+                        textView.setText(Integer.toString(object.Count));
+                        palletID = input1.getText().toString();
+                        input1.setFocusable(false);
+                        input2.requestFocus();
+                    }
+                    else{
+                        //do something as a failure
+
+                        Snackbar.make(getCurrentFocus(), "Invalid Pallet ID", Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+
+                        ResetActivity();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Snackbar.make(findViewById(R.id.main_layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+
+                    ResetActivity();
+                }
+            });
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /** GetPalletCount is the count after the palletID is already stored **/
+    public void GetPalletCount(){
+        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
+        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+        final TextView textView  = (TextView)findViewById(R.id.totalScanned);
+
+        String text1 = input1.getText().toString();
+
+        RequestParams params = new RequestParams();
+        params.setUseJsonStreamer(true);
+        JSONObject student1 = new JSONObject();
+        try {
+            student1.put("Pallet_ID", text1);
+            student1.put("isIndia", 0);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        StringEntity stringEntity;
+        try {
+            stringEntity = new StringEntity(student1.toString());
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    String testString = new String(responseBody, StandardCharsets.UTF_8);
+
+                    testString = testString.substring(1, testString.length()-1);
+                    testString = testString.replace("\\\"", "\"");
+
+                    Gson gson = new GsonBuilder().create();
+                    GetPalletCountReturner object = new GetPalletCountReturner();
+                    try{
+
+                        object = gson.fromJson(testString, GetPalletCountReturner.class);
+
+                    }
+                    catch(JsonSyntaxException e){
+                        ResetActivity();
+                    }
+
+                    if(object.Error == 0){
+                        //display the count here
+                        textView.setText(Integer.toString(object.Count));
+                        palletID = input1.getText().toString();
+                    }
+                    else{
+                        //do something as a failure
+
+                        Snackbar.make(getCurrentFocus(), "Invalid Pallet ID", Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+
+                        ResetActivity();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Snackbar.make(findViewById(R.id.main_layout), new String(error.getMessage()), Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+
+                    ResetActivity();
+                }
+            });
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     public void Check(){
@@ -151,6 +401,7 @@ public class MainActivity extends AppCompatActivity {
             stringEntity = new StringEntity(student1.toString());
             AsyncHttpClient client = new AsyncHttpClient();
             client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+            //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                     String testString = new String(responseBody, StandardCharsets.UTF_8);
@@ -184,30 +435,33 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }, 3000);
 
-                        Snackbar.make(getCurrentFocus(), object.errtxt, Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
 
-                        ResetActivity();
+                        DismissSnackBar();
+                        CheckSnackBar = Snackbar.make(getCurrentFocus(), object.errtxt, Snackbar.LENGTH_LONG)
+                                .setAction("Action", null);
+                        CheckSnackBar.show();
+
+                        GetPalletCount();
+
+                        ResetContainerScan();
                     }
                     else{
+                        //this is a bad scan... stop here and make them click back.
+                        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+                        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
+                        input2.setEnabled(false);
+
                         MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.buzz);
                         ring.start();
 
-                        View overallDiv = findViewById(R.id.overallDiv);
-                        overallDiv.setBackgroundColor(Color.parseColor("#ff0000"));
-                        final Handler handler = new Handler();
-                        handler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                View overallDiv = findViewById(R.id.overallDiv);
-                                overallDiv.setBackgroundColor(0xffffffff);
-                            }
-                        }, 3000);
+                        View tempDiv = findViewById(R.id.overallDiv);
+                        tempDiv.setBackgroundColor(0xFFFF0000);
 
-                        Snackbar.make(getCurrentFocus(), object.errtxt, Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
+                        DismissSnackBar();
+                        CheckSnackBar = Snackbar.make(getCurrentFocus(), object.errtxt, Snackbar.LENGTH_INDEFINITE)
+                                .setAction("Action", null);
+                        CheckSnackBar.show();
 
-                        ResetActivity();
                     }
 
                 }
@@ -225,26 +479,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            startActivity(new Intent(MainActivity.this, LoginActivity.class));
-            return true;
-        }
 
-        return super.onOptionsItemSelected(item);
-    }
 }

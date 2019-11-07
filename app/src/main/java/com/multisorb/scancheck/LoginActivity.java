@@ -123,7 +123,9 @@ public class LoginActivity extends AppCompatActivity {
 
         final EditText input1 = (EditText) findViewById(R.id.badgeNumber);
 
-        input1.setShowSoftInputOnFocus(false);
+        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            input1.setShowSoftInputOnFocus(false);
+        //}
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
@@ -155,6 +157,7 @@ public class LoginActivity extends AppCompatActivity {
                                         stringEntity = new StringEntity(student1.toString());
                                         AsyncHttpClient client = new AsyncHttpClient();
                                         client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
+                                        //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
                                             @Override
                                             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                                                 String testString = new String(responseBody, StandardCharsets.UTF_8);
