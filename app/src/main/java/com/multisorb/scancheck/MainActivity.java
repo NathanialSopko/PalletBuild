@@ -46,6 +46,18 @@ public class MainActivity extends AppCompatActivity {
 
     private Snackbar CheckSnackBar;
 
+    /***
+     * Override area
+     *
+     * On Back Press (Physical Button Click)
+     *
+     * OnCreate (Initialization)
+     *
+     * OnCreateOptions Menu (Top Right Button (...))
+     *
+     * OnOptionsItemSelected (Log Out)
+     */
+
     @Override
     public void onBackPressed() {
         final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
@@ -60,43 +72,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void ResetActivity(){
-        palletID = "";
 
-        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
-        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
-        final TextView textView  = (TextView)findViewById(R.id.totalScanned);
-
-        input1.setText("");
-        input2.setText("");
-        textView.setText("");
-
-        input1.setFocusable(true);
-        input1.requestFocus();
-
-        DismissSnackBar();
-    }
-
-    private void ResetContainerScan(){
-        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
-
-        View overallDiv = findViewById(R.id.overallDiv);
-        overallDiv.setBackgroundColor(Color.parseColor("#ffffff"));
-
-        input2.setText("");
-
-        input2.requestFocus();
-
-        DismissSnackBar();
-    }
-
-    private void DismissSnackBar(){
-        if(CheckSnackBar != null){
-            if(CheckSnackBar.isShown()){
-                CheckSnackBar.dismiss();
-            }
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,10 +99,8 @@ public class MainActivity extends AppCompatActivity {
         final EditText input2 = findViewById(R.id.plain_text_input2);
 
 
-        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            input1.setShowSoftInputOnFocus(false);
-            input2.setShowSoftInputOnFocus(false);
-        //}
+        input1.setShowSoftInputOnFocus(false);
+        input2.setShowSoftInputOnFocus(false);
 
         input1.addTextChangedListener(
                 new TextWatcher() {
@@ -183,6 +157,81 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
     }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    /***
+     *
+     * End of override area
+     *
+     */
+
+
+
+    private void ResetActivity(){
+        palletID = "";
+
+        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
+        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+        final TextView textView  = (TextView)findViewById(R.id.totalScanned);
+
+        input1.setText("");
+        input2.setText("");
+        textView.setText("");
+
+        input1.setFocusable(true);
+        input1.requestFocus();
+
+        DismissSnackBar();
+    }
+
+    private void ResetContainerScan(){
+        final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
+
+        View overallDiv = findViewById(R.id.overallDiv);
+        overallDiv.setBackgroundColor(Color.parseColor("#ffffff"));
+
+        input2.setText("");
+
+        input2.requestFocus();
+
+        DismissSnackBar();
+    }
+
+    private void DismissSnackBar(){
+        if(CheckSnackBar != null){
+            if(CheckSnackBar.isShown()){
+                CheckSnackBar.dismiss();
+            }
+        }
+    }
+
+
 
     /** GetPalletCountFirst is assuming that there is no palletID already stored **/
     public void GetPalletCountFirst(){
@@ -257,6 +306,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /** GetPalletCount is the count after the palletID is already stored **/
     public void GetPalletCount(){
         final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
         final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
@@ -399,10 +449,6 @@ public class MainActivity extends AppCompatActivity {
                         //this is a bad scan... stop here and make them click back.
                         final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
                         final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
-                        //input2.setText("");
-//                        input2.clearFocus();
-//                        input1.clearFocus();
-//                        getWindow().getDecorView().clearFocus();
                         input2.setEnabled(false);
 
                         MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.buzz);
@@ -433,26 +479,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            startActivity(new Intent(MainActivity.this, LoginActivity.class));
-            return true;
-        }
 
-        return super.onOptionsItemSelected(item);
-    }
 }
