@@ -71,34 +71,6 @@ import static android.Manifest.permission.READ_CONTACTS;
  */
 public class LoginActivity extends AppCompatActivity {
 
-    /**
-     * Id to identity READ_CONTACTS permission request.
-     */
-    private static final int REQUEST_READ_CONTACTS = 0;
-
-    /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
-     */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    private UserLoginTask mAuthTask = null;
-
-    // UI references.
-    private AutoCompleteTextView mEmailView;
-    private EditText mPasswordView;
-    private View mProgressView;
-    private View mLoginFormView;
-
-//    private final EditText badgeNumberInput;
-
-//    public static final MediaType JSON
-//            = MediaType.get("application/json; charset=utf-8");
-
     private void ResetActivity(){
         final EditText input1 = (EditText) findViewById(R.id.badgeNumber);
 
@@ -116,16 +88,10 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        // Set up the login form.
-//        mEmailView = (AutoCompleteTextView) findViewById(R.id.badgeNumber);
-        //populateAutoComplete();
-
 
         final EditText input1 = (EditText) findViewById(R.id.badgeNumber);
 
-        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            input1.setShowSoftInputOnFocus(false);
-        //}
+        input1.setShowSoftInputOnFocus(false);
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
@@ -157,7 +123,6 @@ public class LoginActivity extends AppCompatActivity {
                                         stringEntity = new StringEntity(student1.toString());
                                         AsyncHttpClient client = new AsyncHttpClient();
                                         client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
-                                        //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/CheckInUser", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
                                             @Override
                                             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                                                 String testString = new String(responseBody, StandardCharsets.UTF_8);
@@ -202,6 +167,8 @@ public class LoginActivity extends AppCompatActivity {
                                         });
                                     } catch (UnsupportedEncodingException e) {
                                         e.printStackTrace();
+                                    } catch(Exception e){
+                                        e.printStackTrace();
                                     }
                                 }
                             }
@@ -210,50 +177,6 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 }
         );
-
-//        mLoginFormView = findViewById(R.id.login_form);
-//        mProgressView = findViewById(R.id.login_progress);
-    }
-
-
-
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
-
-        private final String mEmail;
-        private final String mPassword;
-
-        UserLoginTask(String email, String password) {
-            mEmail = email;
-            mPassword = password;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
-
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-
-            // TODO: register the new account here.
-            return true;
-        }
-
 
     }
 }

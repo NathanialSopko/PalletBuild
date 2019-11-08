@@ -73,7 +73,7 @@
         <TextView
             android:gravity="bottom|left"
             android:text="Total Scanned: "
-            android:textSize="23dp"
+            android:textSize="30dp"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="2"/>
@@ -81,7 +81,7 @@
             android:id="@+id/totalScanned"
             android:gravity="bottom|left"
             android:text=""
-            android:textSize="23dp"
+            android:textSize="65dp"
             android:layout_weight="2"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>

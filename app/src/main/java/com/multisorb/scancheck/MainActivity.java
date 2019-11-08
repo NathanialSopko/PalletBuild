@@ -7,16 +7,20 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -72,7 +76,29 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+//    @Override
+//    public boolean onMenuOpened(int featureId, Menu menu) {
+//            return super.onMenuOpened(featureId, menu);
+//    }
 
+    @Override
+    public void onPanelClosed(int featureId, Menu menu) {
+        Log.d("info", "On Panel Closed Called");
+
+        SetToolbarToNotFocusable();
+
+        SetLayoutFocus();
+
+        if(palletID == ""){
+            ResetActivity();
+        }
+        else{
+            final EditText input2 = findViewById(R.id.plain_text_input2);
+
+            if(input2.getText().toString().equals(""))
+                ResetContainerScan();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,8 +107,10 @@ public class MainActivity extends AppCompatActivity {
         this.palletID = "";
 
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        toolbar.setFocusable(false);
+        toolbar.setFocusableInTouchMode(true);
 
         Bundle b = getIntent().getExtras();
         String value = ""; // or other values
@@ -93,6 +121,24 @@ public class MainActivity extends AppCompatActivity {
             badgeID = b.getString("Badge_ID");
         }
 
+        ConstraintLayout myLayout = findViewById(R.id.overallDiv);
+        myLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SetToolbarToNotFocusable();
+                Log.d("info", "Clicking on layout");
+                if(palletID == ""){
+                    ResetActivity();
+                }
+                else{
+                    final EditText input2 = findViewById(R.id.plain_text_input2);
+
+                    if(input2.getText().toString().equals(""))
+                        ResetContainerScan();
+                }
+            }
+        });
+
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
 
         final EditText input1 = findViewById(R.id.plain_text_input);
@@ -101,6 +147,8 @@ public class MainActivity extends AppCompatActivity {
 
         input1.setShowSoftInputOnFocus(false);
         input2.setShowSoftInputOnFocus(false);
+
+        input1.requestFocus();
 
         input1.addTextChangedListener(
                 new TextWatcher() {
@@ -124,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                         };
-                        handler.postDelayed(workRunnable, 750 /*delay*/);
+                        handler.postDelayed(workRunnable, 100 /*delay*/);
                     }
                 }
         );
@@ -152,31 +200,30 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             }
                         };
-                        handler.postDelayed(workRunnable, 750 /*delay*/);
+                        handler.postDelayed(workRunnable, 100 /*delay*/);
                     }
                 }
         );
     }
 
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d("info", "On Create Options Menu Selected called");
+
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        Log.d("info", "On Options Item Selected called");
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             return true;
@@ -191,10 +238,16 @@ public class MainActivity extends AppCompatActivity {
      *
      */
 
-
+    private void SetToolbarToNotFocusable(){
+//        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        toolbar.setFocusable(false);
+    }
 
     private void ResetActivity(){
         palletID = "";
+
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.getMenu().getItem(0).setEnabled((true));
 
         final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
         final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
@@ -204,19 +257,31 @@ public class MainActivity extends AppCompatActivity {
         input2.setText("");
         textView.setText("");
 
+        input1.setFocusableInTouchMode(true);
+        input2.setFocusableInTouchMode(false);
         input1.setFocusable(true);
+        input2.setFocusable(false);
+
         input1.requestFocus();
 
         DismissSnackBar();
     }
 
     private void ResetContainerScan(){
+        Log.d("info", "Reset container scan called");
+
+        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
         final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
 
         View overallDiv = findViewById(R.id.overallDiv);
         overallDiv.setBackgroundColor(Color.parseColor("#ffffff"));
 
         input2.setText("");
+
+        input1.setFocusableInTouchMode(false);
+        input2.setFocusableInTouchMode(true);
+        input1.setFocusable(false);
+        input2.setFocusable(true);
 
         input2.requestFocus();
 
@@ -231,6 +296,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private void SetLayoutFocus(){
+        ConstraintLayout myLayout = findViewById(R.id.overallDiv);
+        myLayout.setFocusable(true);
+        myLayout.requestFocus();
+    }
 
 
     /** GetPalletCountFirst is assuming that there is no palletID already stored **/
@@ -256,7 +327,6 @@ public class MainActivity extends AppCompatActivity {
             stringEntity = new StringEntity(student1.toString());
             AsyncHttpClient client = new AsyncHttpClient();
             client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
-            //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                     String testString = new String(responseBody, StandardCharsets.UTF_8);
@@ -279,8 +349,14 @@ public class MainActivity extends AppCompatActivity {
                         //display the count here
                         textView.setText(Integer.toString(object.Count));
                         palletID = input1.getText().toString();
-                        input1.setFocusable(false);
-                        input2.requestFocus();
+
+                        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+                        toolbar.getMenu().getItem(0).setEnabled((false));
+
+
+//                        input1.setFocusable(false);
+//                        input2.requestFocus();
+                            ResetContainerScan();
                     }
                     else{
                         //do something as a failure
@@ -329,7 +405,6 @@ public class MainActivity extends AppCompatActivity {
             stringEntity = new StringEntity(student1.toString());
             AsyncHttpClient client = new AsyncHttpClient();
             client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
-                //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/GetTotalScanCount", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                     String testString = new String(responseBody, StandardCharsets.UTF_8);
@@ -352,6 +427,10 @@ public class MainActivity extends AppCompatActivity {
                         //display the count here
                         textView.setText(Integer.toString(object.Count));
                         palletID = input1.getText().toString();
+
+                        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+                        toolbar.getMenu().getItem(0).setEnabled((false));
+
                     }
                     else{
                         //do something as a failure
@@ -401,7 +480,6 @@ public class MainActivity extends AppCompatActivity {
             stringEntity = new StringEntity(student1.toString());
             AsyncHttpClient client = new AsyncHttpClient();
             client.post(getBaseContext(),"http://10.38.0.69/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
-            //client.post(getBaseContext(),"http://10.38.57.50/PalletBuild/PalletBuild/CheckPalletData", stringEntity, RequestParams.APPLICATION_JSON, new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                     String testString = new String(responseBody, StandardCharsets.UTF_8);
@@ -448,8 +526,12 @@ public class MainActivity extends AppCompatActivity {
                     else{
                         //this is a bad scan... stop here and make them click back.
                         final EditText input2 = (EditText) findViewById(R.id.plain_text_input2);
-                        final EditText input1 = (EditText) findViewById(R.id.plain_text_input);
                         input2.setEnabled(false);
+                        input2.setFocusable(false);
+                        input2.setFocusableInTouchMode(false);
+
+                        SetLayoutFocus();
+                        SetToolbarToNotFocusable();
 
                         MediaPlayer ring= MediaPlayer.create(MainActivity.this,R.raw.buzz);
                         ring.start();
