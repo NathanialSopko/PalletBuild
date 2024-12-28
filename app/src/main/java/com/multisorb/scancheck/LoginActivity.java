@@ -65,7 +65,7 @@ import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
 import static android.Manifest.permission.READ_CONTACTS;
-
+import com.multisorb.scancheck.R;
 /**
  * A login screen that offers login via email/password.
  */
